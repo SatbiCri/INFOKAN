@@ -1,0 +1,54 @@
+{
+  "name": "Infokan (uang dan waktu)",
+  "short_name": "Infokan",
+  "description": "Super-App manajemen finansial dan produktivitas hidup untuk anak kost, mahasiswa, dan perantau. 100% Offline-First.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catat Pengeluaran",
+      "short_name": "Pengeluaran",
+      "description": "Catat pengeluaran harian anak kost",
+      "url": "./index.html?action=new-expense",
+      "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cek Saldo & Anggaran",
+      "short_name": "Anggaran",
+      "description": "Lihat sisa budget dan saldo saat ini",
+      "url": "./index.html?action=budget",
+      "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Jadwal Hari Ini",
+      "short_name": "Jadwal",
+      "description": "Lihat jadwal kuliah dan kegiatan hari ini",
+      "url": "./index.html?action=schedule",
+      "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

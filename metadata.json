@@ -1,0 +1,6 @@
+{
+  "name": "Infokan",
+  "description": "Super-App manajemen finansial dan produktivitas hidup untuk anak kost, mahasiswa, dan perantau. 100% offline-first.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Infokan (uang dan waktu)</title>
+  
+  <!-- PWA Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Infokan">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <!-- App Wrapper -->
+  <div class="app-container">
+    
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="brand-wrapper">
+        <button id="brandLogoBtn" class="brand-logo-btn" title="Infokan App" aria-label="Logo">
+          <img src="icons/icon-192x192.png" alt="Infokan" class="brand-logo-img">
+        </button>
+        <div>
+          <h1 class="brand-title">Infokan</h1>
+          <p class="brand-subtitle">uang dan waktu • offline</p>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="shieldStatusBtn" class="shield-btn unactivated" aria-label="Status Aktivasi">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span id="shieldLabel">Aktivasi</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Pages -->
+    <main id="mainContent">
+
+      <!-- 1. TAB BERANDA -->
+      <section id="pageDashboard" class="page-view">
+        <!-- Hero Balance Widget -->
+        <div class="card hero-balance-card">
+          <div class="card-header" style="margin-bottom: 0;">
+            <span class="card-subtitle" style="color: var(--cyan-400); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Total Saldo Bersih</span>
+            <span id="offlineIndicator" style="font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: var(--emerald-400); font-weight: 600;">100% Offline</span>
+          </div>
+          <div class="hero-amount">
+            <span class="currency">Rp</span>
+            <span id="dashNetWorth">0</span>
+          </div>
+
+          <div class="balance-split">
+            <div class="split-item">
+              <span class="split-label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+                Dompet Tunai (Cash)
+              </span>
+              <span class="split-val" id="dashCashBalance" style="color: var(--emerald-400);">Rp 0</span>
+            </div>
+            <div class="split-item">
+              <span class="split-label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Bank & E-Wallet
+              </span>
+              <span class="split-val" id="dashBankBalance" style="color: var(--cyan-400);">Rp 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warning Alert Banner for Budgets (Dynamically injected) -->
+        <div id="dashBudgetAlerts"></div>
+
+        <!-- Mini-Widget: Ringkasan Anggaran Bulan Ini -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-400)" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              Anggaran Bulan Ini
+            </h2>
+            <button class="chip-btn" id="btnGoBudget" style="padding: 4px 8px; font-size: 0.7rem;">Kelola</button>
+          </div>
+          <div id="dashBudgetWidgetContent">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Mini-Widget: Jadwal Terdekat Hari Ini -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Jadwal Hari Ini
+            </h2>
+            <button class="chip-btn" id="btnGoSchedule" style="padding: 4px 8px; font-size: 0.7rem;">Lihat Semua</button>
+          </div>
+          <div id="dashScheduleWidgetContent">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Mini-Widget: Deadline Tugas Mendesak -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--rose-400)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Tugas Terdekat
+            </h2>
+            <button class="chip-btn" id="btnGoTasks" style="padding: 4px 8px; font-size: 0.7rem;">Semua Tugas</button>
+          </div>
+          <div id="dashTaskWidgetContent">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. TAB TRANSAKSI (3-TAB SEGMENTED CONTROLLER) -->
+      <section id="pageTransactions" class="page-view" style="display: none;">
+        
+        <!-- Segmented 3-Tab Controller -->
+        <div class="segment-container">
+          <button class="segment-btn active-expense" id="tabExpenseBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            Pengeluaran
+          </button>
+          <button class="segment-btn" id="tabIncomeBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            Pemasukan
+          </button>
+          <button class="segment-btn" id="tabTransferBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Tarik / Setor
+          </button>
+        </div>
+
+        <!-- Form Transaksi Card -->
+        <div class="card" id="transactionFormCard">
+          
+          <!-- TAB 1: PENGELUARAN FORM -->
+          <form id="formExpense" class="form-group" style="gap: 14px;">
+            <!-- Hero Typography Amount Input -->
+            <div class="form-group">
+              <label class="form-label">Nominal Pengeluaran</label>
+              <div class="hero-input-wrapper focus-rose">
+                <span class="hero-currency-prefix">Rp</span>
+                <input type="text" id="expenseAmountInput" class="hero-input-field" placeholder="0" inputmode="numeric" autocomplete="off" required>
+              </div>
+              <!-- Quick Amount Pills -->
+              <div class="quick-amount-row">
+                <button type="button" class="quick-amount-btn" data-add="10000">+10.000</button>
+                <button type="button" class="quick-amount-btn" data-add="20000">+20.000</button>
+                <button type="button" class="quick-amount-btn" data-add="50000">+50.000</button>
+                <button type="button" class="quick-amount-btn" data-add="100000">+100.000</button>
+                <button type="button" class="quick-amount-btn" data-clear="true" style="color: var(--rose-400);">Reset</button>
+              </div>
+            </div>
+
+            <!-- Date & Time Picker (Modern + Backdate) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group">
+                <label class="form-label">Tanggal</label>
+                <input type="date" id="expenseDateInput" class="input-field" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Jam</label>
+                <input type="time" id="expenseTimeInput" class="input-field" required>
+              </div>
+            </div>
+
+            <!-- Category (Pill Chips) -->
+            <div class="form-group">
+              <label class="form-label">Kategori Utama</label>
+              <div class="chips-container" id="expenseCategoryChips">
+                <button type="button" class="chip-btn selected-rose" data-cat="Makan & Minum">🍔 Makan & Minum</button>
+                <button type="button" class="chip-btn" data-cat="Kebutuhan Kost">🏠 Kebutuhan Kost</button>
+                <button type="button" class="chip-btn" data-cat="Akademik & Kuliah">📚 Akademik & Kuliah</button>
+                <button type="button" class="chip-btn" data-cat="Transportasi">🚗 Transportasi</button>
+                <button type="button" class="chip-btn" data-cat="Hiburan & Pribadi">☕ Hiburan & Pribadi</button>
+                <button type="button" class="chip-btn" data-cat="Kesehatan & Darurat">💊 Kesehatan & Darurat</button>
+              </div>
+            </div>
+
+            <!-- Sub Category (Pill Chips) -->
+            <div class="form-group">
+              <label class="form-label">Sub-Kategori</label>
+              <div class="chips-container" id="expenseSubCategoryChips">
+                <!-- Dynamically populated based on category -->
+              </div>
+            </div>
+
+            <!-- Catatan (Optional with limit) -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>Catatan (Opsional)</span>
+                <span id="expenseCharCount" style="color: var(--text-dim); font-size: 0.72rem;">0/150</span>
+              </div>
+              <input type="text" id="expenseNoteInput" class="input-field" placeholder="Contoh: Nasi padang + es teh" maxlength="150">
+            </div>
+
+            <button type="submit" class="btn-primary btn-rose" id="btnSubmitExpense">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Simpan Pengeluaran
+            </button>
+          </form>
+
+          <!-- TAB 2: PEMASUKAN FORM -->
+          <form id="formIncome" class="form-group" style="gap: 14px; display: none;">
+            <div class="form-group">
+              <label class="form-label">Nominal Pemasukan</label>
+              <div class="hero-input-wrapper focus-emerald">
+                <span class="hero-currency-prefix">Rp</span>
+                <input type="text" id="incomeAmountInput" class="hero-input-field" placeholder="0" inputmode="numeric" autocomplete="off" required>
+              </div>
+              <div class="quick-amount-row">
+                <button type="button" class="quick-amount-btn" data-add-inc="50000">+50.000</button>
+                <button type="button" class="quick-amount-btn" data-add-inc="100000">+100.000</button>
+                <button type="button" class="quick-amount-btn" data-add-inc="500000">+500.000</button>
+                <button type="button" class="quick-amount-btn" data-add-inc="1000000">+1 Juta</button>
+                <button type="button" class="quick-amount-btn" data-clear-inc="true" style="color: var(--emerald-400);">Reset</button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group">
+                <label class="form-label">Tanggal</label>
+                <input type="date" id="incomeDateInput" class="input-field" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Jam</label>
+                <input type="time" id="incomeTimeInput" class="input-field" required>
+              </div>
+            </div>
+
+            <!-- Categories Pemasukan Anak Kost -->
+            <div class="form-group">
+              <label class="form-label">Sumber Pemasukan</label>
+              <div class="chips-container" id="incomeCategoryChips">
+                <button type="button" class="chip-btn selected-emerald" data-inc="Kiriman Orang Tua / Keluarga">💵 Kiriman Orang Tua / Keluarga</button>
+                <button type="button" class="chip-btn" data-inc="Gaji / Kerja Part-Time / Magang">💼 Gaji / Kerja Part-Time</button>
+                <button type="button" class="chip-btn" data-inc="Beasiswa Kuliah">🎓 Beasiswa Kuliah</button>
+                <button type="button" class="chip-btn" data-inc="Hadiah / Angpao / THR">🎁 Hadiah / Angpao / THR</button>
+                <button type="button" class="chip-btn" data-inc="Jual Barang Bekas / Preloved">🛍️ Jual Barang Bekas / Preloved</button>
+                <button type="button" class="chip-btn" data-inc="Reimburse / Pengembalian Utang">📈 Reimburse / Utang Teman</button>
+                <button type="button" class="chip-btn" data-inc="Lainnya">📦 Lainnya</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">
+                <span>Catatan Sumber (Opsional)</span>
+                <span id="incomeCharCount" style="color: var(--text-dim); font-size: 0.72rem;">0/150</span>
+              </div>
+              <input type="text" id="incomeNoteInput" class="input-field" placeholder="Contoh: Kiriman bulanan tanggal 1" maxlength="150">
+            </div>
+
+            <button type="submit" class="btn-primary btn-emerald" id="btnSubmitIncome">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Simpan Pemasukan
+            </button>
+          </form>
+
+          <!-- TAB 3: TARIK / SETOR TUNAI FORM -->
+          <form id="formTransfer" class="form-group" style="gap: 14px; display: none;">
+            <!-- Mode Switch: Tarik vs Setor -->
+            <div class="transfer-mode-switch">
+              <button type="button" class="transfer-pill active" id="btnModeTarik">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
+                Tarik Tunai (ATM ➔ Cash)
+              </button>
+              <button type="button" class="transfer-pill" id="btnModeSetor">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Setor Tunai (Cash ➔ Bank)
+              </button>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" id="transferAmountLabel">Nominal Tarik Tunai</label>
+              <div class="hero-input-wrapper">
+                <span class="hero-currency-prefix">Rp</span>
+                <input type="text" id="transferAmountInput" class="hero-input-field" placeholder="0" inputmode="numeric" autocomplete="off" required>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group">
+                <label class="form-label">Tanggal</label>
+                <input type="date" id="transferDateInput" class="input-field" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Jam</label>
+                <input type="time" id="transferTimeInput" class="input-field" required>
+              </div>
+            </div>
+
+            <!-- Bank / E-Wallet Chips -->
+            <div class="form-group">
+              <label class="form-label">Pilihan Bank / E-Wallet</label>
+              <div class="chips-container" id="transferBankChips">
+                <button type="button" class="chip-btn selected-cyan" data-bank="BCA">BCA</button>
+                <button type="button" class="chip-btn" data-bank="BRI">BRI</button>
+                <button type="button" class="chip-btn" data-bank="Mandiri">Mandiri</button>
+                <button type="button" class="chip-btn" data-bank="BNI">BNI</button>
+                <button type="button" class="chip-btn" data-bank="Dana">Dana</button>
+                <button type="button" class="chip-btn" data-bank="GoPay">GoPay</button>
+                <button type="button" class="chip-btn" data-bank="OVO">OVO</button>
+                <button type="button" class="chip-btn" data-bank="ShopeePay">ShopeePay</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Catatan Mutasi</label>
+              <input type="text" id="transferNoteInput" class="input-field" placeholder="Contoh: Tarik di ATM Indomaret dekat kost">
+            </div>
+
+            <button type="submit" class="btn-primary btn-cyan" id="btnSubmitTransfer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Eksekusi Mutasi Saldo
+            </button>
+          </form>
+
+        </div>
+
+        <!-- Riwayat Transaksi Terbaru -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Riwayat Transaksi</h2>
+            <span class="card-subtitle" id="transHistoryCount">0 Transaksi</span>
+          </div>
+          <div id="transHistoryList" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 3. TAB ANGGARAN (BUDGETING & ANALITIK) -->
+      <section id="pageBudget" class="page-view" style="display: none;">
+        <!-- Header & Action -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">Anggaran Kost</h2>
+            <p style="font-size: 0.75rem; color: var(--text-dim);">Kontrol sisa uang agar tidak habis di awal bulan</p>
+          </div>
+          <button id="btnOpenAddBudget" class="btn-primary btn-emerald" style="width: auto; padding: 8px 14px; font-size: 0.8rem; border-radius: 12px; min-height: 40px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Budget
+          </button>
+        </div>
+
+        <!-- Budget Warnings Banner if any -->
+        <div id="budgetAlertBannerList"></div>
+
+        <!-- Overall Budget Health Card with Circular Progress -->
+        <div class="card" id="budgetOverallCard">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div>
+              <span class="card-subtitle">Pengeluaran vs Batas Total</span>
+              <div style="font-size: 1.5rem; font-weight: 800; margin: 4px 0;" id="budgetUsedText">Rp 0</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);" id="budgetTotalLimitText">dari batas Rp 0</div>
+            </div>
+            
+            <!-- Circular Progress Ring (Clamped) -->
+            <div style="position: relative; width: 84px; height: 84px; flex-shrink: 0;">
+              <svg class="circle-progress-svg" width="84" height="84" viewBox="0 0 84 84">
+                <circle class="circle-progress-bg" cx="42" cy="42" r="34" stroke-width="8" fill="none"/>
+                <circle id="budgetCircleProgress" class="circle-progress-bar" cx="42" cy="42" r="34" stroke-width="8" fill="none" stroke="var(--emerald-500)" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+              </svg>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800;" id="budgetPercentageText">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Budgets List (CRUD) -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Batas Anggaran Per Kategori</h3>
+            <span class="card-subtitle" id="budgetListCount">0 Kategori</span>
+          </div>
+          <div id="budgetCategoryList" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. TAB JADWAL & ALARM (OFFLINE SCHEDULER) -->
+      <section id="pageSchedule" class="page-view" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">Jadwal & Alarm</h2>
+            <p style="font-size: 0.75rem; color: var(--text-dim);" id="currentLiveTime">Memuat jam...</p>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button id="btnOpenAddSchedule" class="btn-primary btn-cyan" style="width: auto; padding: 8px 12px; font-size: 0.78rem; border-radius: 12px; min-height: 40px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Jadwal
+            </button>
+            <button id="btnOpenAddAlarm" class="btn-primary" style="width: auto; padding: 8px 12px; font-size: 0.78rem; border-radius: 12px; min-height: 40px; background: rgba(255, 255, 255, 0.08); color: var(--text-main);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg>
+              Alarm
+            </button>
+          </div>
+        </div>
+
+        <!-- Day Selector Filter (Senin - Minggu) -->
+        <div class="chips-container" id="dayFilterChips" style="overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px;">
+          <button type="button" class="chip-btn selected-cyan" data-day="all">Semua</button>
+          <button type="button" class="chip-btn" data-day="Senin">Senin</button>
+          <button type="button" class="chip-btn" data-day="Selasa">Selasa</button>
+          <button type="button" class="chip-btn" data-day="Rabu">Rabu</button>
+          <button type="button" class="chip-btn" data-day="Kamis">Kamis</button>
+          <button type="button" class="chip-btn" data-day="Jumat">Jumat</button>
+          <button type="button" class="chip-btn" data-day="Sabtu">Sabtu</button>
+          <button type="button" class="chip-btn" data-day="Minggu">Minggu</button>
+        </div>
+
+        <!-- Alarm Cards -->
+        <div class="card" id="activeAlarmsSection">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber-400)" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/></svg>
+              Alarm & Pengingat Offline
+            </h3>
+            <span class="card-subtitle" id="alarmCountBadge">0 Alarm</span>
+          </div>
+          <div id="alarmItemsList" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Real-Time Schedule Timeline -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan-400)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Timeline Kegiatan
+            </h3>
+            <span class="card-subtitle" id="scheduleFilterLabel">Hari ini</span>
+          </div>
+          <div id="scheduleTimelineList" style="display: flex; flex-direction: column;">
+            <!-- Dynamically populated with real-time opacity/line-through for past items -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. TAB TUGAS (TASK MANAGEMENT) -->
+      <section id="pageTasks" class="page-view" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">Tugas & Deadline</h2>
+            <p style="font-size: 0.75rem; color: var(--text-dim);" id="taskCounterSubtitle">0 tugas tersisa</p>
+          </div>
+          <button id="btnOpenAddTask" class="btn-primary btn-rose" style="width: auto; padding: 8px 14px; font-size: 0.8rem; border-radius: 12px; min-height: 40px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tugas Baru
+          </button>
+        </div>
+
+        <!-- Priority Filters -->
+        <div class="chips-container" id="taskPriorityFilterChips">
+          <button type="button" class="chip-btn selected-rose" data-prio="all">Semua</button>
+          <button type="button" class="chip-btn" data-prio="tinggi">🔥 Prioritas Tinggi</button>
+          <button type="button" class="chip-btn" data-prio="sedang">⚡ Sedang</button>
+          <button type="button" class="chip-btn" data-prio="rendah">🌱 Santai</button>
+        </div>
+
+        <!-- Tasks List -->
+        <div id="tasksListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-nav="dashboard" id="navDashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Beranda</span>
+      </button>
+
+      <button class="nav-item" data-nav="budget" id="navBudget">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span>Anggaran</span>
+      </button>
+
+      <!-- Center Action Button -->
+      <button class="nav-fab" id="navFabAdd" aria-label="Catat Transaksi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <button class="nav-item" data-nav="schedule" id="navSchedule">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Jadwal</span>
+      </button>
+
+      <button class="nav-item" data-nav="tasks" id="navTasks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Tugas</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal: Aktivasi Offline -->
+  <div class="modal-overlay" id="modalActivation">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: var(--emerald-400);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="sheet-title">Aktivasi Infokan</h3>
+        </div>
+        <button class="sheet-close-btn" id="btnCloseActivation">&times;</button>
+      </div>
+
+      <p style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.45;">
+        Aplikasi ini 100% offline. Salin Installation ID perangkat Anda dan kirimkan ke Admin via WhatsApp untuk mendapatkan kode aktivasi resmi.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Installation ID Perangkat Anda</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="actInstallId" class="input-field" readonly style="font-family: monospace; font-weight: 700; color: var(--cyan-400); background: #090d16;">
+          <button type="button" id="btnCopyInstallId" class="chip-btn" style="padding: 0 14px; border-radius: 12px;">Salin</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Masukkan Kode Aktivasi (SHA-256)</label>
+        <input type="text" id="actInputCode" class="input-field" placeholder="ACT-XXXX-XXXX-XXXX" style="font-family: monospace; text-transform: uppercase;">
+      </div>
+
+      <button type="button" class="btn-primary btn-emerald" id="btnVerifyActivation">
+        Verifikasi & Aktifkan
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 10px; margin: 4px 0;">
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+        <span style="font-size: 0.72rem; color: var(--text-dim);">atau bantuan admin</span>
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+      </div>
+
+      <button type="button" class="btn-primary" id="btnWhatsAppSupport" style="background: #25D366; color: #090d16; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/></svg>
+        Minta Kode Aktivasi (WhatsApp)
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Mode Pengembang Rahasia (5 Taps Shield) -->
+  <div class="modal-overlay" id="modalDevMode">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title" style="color: var(--amber-400);">Mode Pengembang</h3>
+        <button class="sheet-close-btn" id="btnCloseDev">&times;</button>
+      </div>
+
+      <div id="devPinSection" class="form-group" style="gap: 12px;">
+        <p style="font-size: 0.8rem; color: var(--text-dim);">
+          Akses terbatas. Masukkan PIN otorisasi pengembang untuk membuka diagnostik.
+        </p>
+        <input type="password" id="devPinInput" class="input-field" placeholder="Masukkan PIN" maxlength="10">
+        <button type="button" class="btn-primary" id="btnSubmitDevPin" style="background: var(--amber-500); color: #090d16;">
+          Verifikasi PIN
+        </button>
+      </div>
+
+      <div id="devUnlockedSection" class="form-group" style="gap: 12px; display: none;">
+        <div class="alert-banner alert-amber">
+          Otorisasi Pengembang Valid! Anda dapat melihat kode aktivasi offline perangkat ini.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kode Aktivasi Offline Resmi</label>
+          <input type="text" id="devGeneratedCode" class="input-field" readonly style="font-family: monospace; font-weight: 700; color: var(--emerald-400);">
+        </div>
+        <button type="button" class="btn-primary btn-emerald" id="btnDevInstantActivate">
+          Aktivasi Instan Perangkat Ini
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah / Edit Budget -->
+  <div class="modal-overlay" id="modalBudget">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title" id="budgetModalTitle">Atur Batas Anggaran</h3>
+        <button class="sheet-close-btn" id="btnCloseBudget">&times;</button>
+      </div>
+
+      <form id="formBudgetModal" class="form-group" style="gap: 14px;">
+        <input type="hidden" id="budgetIdInput">
+
+        <div class="form-group">
+          <label class="form-label">Kategori Anggaran</label>
+          <select id="budgetCategorySelect" class="select-field" required>
+            <option value="Makan & Minum">🍔 Makan & Minum</option>
+            <option value="Kebutuhan Kost">🏠 Kebutuhan Kost</option>
+            <option value="Akademik & Kuliah">📚 Akademik & Kuliah</option>
+            <option value="Transportasi">🚗 Transportasi</option>
+            <option value="Hiburan & Pribadi">☕ Hiburan & Pribadi</option>
+            <option value="Kesehatan & Darurat">💊 Kesehatan & Darurat</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Batas Maksimal Bulanan</label>
+          <div class="hero-input-wrapper">
+            <span class="hero-currency-prefix">Rp</span>
+            <input type="text" id="budgetLimitInput" class="hero-input-field" placeholder="0" inputmode="numeric" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-emerald">
+          Simpan Batas Anggaran
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Jadwal -->
+  <div class="modal-overlay" id="modalSchedule">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title">Tambah Jadwal / Agenda</h3>
+        <button class="sheet-close-btn" id="btnCloseScheduleModal">&times;</button>
+      </div>
+
+      <form id="formScheduleModal" class="form-group" style="gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Judul Mata Kuliah / Kegiatan</label>
+          <input type="text" id="schedTitleInput" class="input-field" placeholder="Contoh: Algoritma & Pemrograman" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Hari</label>
+          <select id="schedDaySelect" class="select-field" required>
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+            <option value="Sabtu">Sabtu</option>
+            <option value="Minggu">Minggu</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">Jam Mulai</label>
+            <input type="time" id="schedStartInput" class="input-field" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai</label>
+            <input type="time" id="schedEndInput" class="input-field" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ruangan / Lokasi (Opsional)</label>
+          <input type="text" id="schedLocationInput" class="input-field" placeholder="Contoh: Gedung B Ruang 203 / Lab Komputer">
+        </div>
+
+        <button type="submit" class="btn-primary btn-cyan">
+          Simpan Jadwal
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Alarm -->
+  <div class="modal-overlay" id="modalAlarm">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title">Pasang Alarm Offline</h3>
+        <button class="sheet-close-btn" id="btnCloseAlarmModal">&times;</button>
+      </div>
+
+      <form id="formAlarmModal" class="form-group" style="gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Nama Alarm</label>
+          <input type="text" id="alarmTitleInput" class="input-field" placeholder="Contoh: Bangun Kuliah Pagi" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Jam Dering</label>
+          <input type="time" id="alarmTimeInput" class="input-field" required style="font-size: 1.3rem; font-weight: 700;">
+        </div>
+
+        <button type="submit" class="btn-primary btn-emerald">
+          Aktifkan Alarm Offline
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Tugas -->
+  <div class="modal-overlay" id="modalTask">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title">Tambah Tugas Baru</h3>
+        <button class="sheet-close-btn" id="btnCloseTaskModal">&times;</button>
+      </div>
+
+      <form id="formTaskModal" class="form-group" style="gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Judul Tugas / Proyek</label>
+          <input type="text" id="taskTitleInput" class="input-field" placeholder="Contoh: Makalah Pancasila Bab 3" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">Tanggal Deadline</label>
+            <input type="date" id="taskDeadlineDateInput" class="input-field" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Deadline</label>
+            <input type="time" id="taskDeadlineTimeInput" class="input-field" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tingkat Prioritas</label>
+          <select id="taskPrioritySelect" class="select-field" required>
+            <option value="tinggi">🔥 Prioritas Tinggi (Mendesak)</option>
+            <option value="sedang" selected>⚡ Sedang (Minggu ini)</option>
+            <option value="rendah">🌱 Santai (Jangka Panjang)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary btn-rose">
+          Simpan Tugas
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loud Alarm Screen Overlay -->
+  <div id="alarmActiveOverlay" class="alarm-overlay" style="display: none;">
+    <div style="width: 72px; height: 72px; border-radius: 24px; background: rgba(244, 63, 94, 0.2); border: 2px solid var(--rose-500); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--rose-500)" stroke-width="2.5"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg>
+    </div>
+    <h2 style="font-size: 1.8rem; font-weight: 800; color: #ffffff;" id="activeAlarmTitle">ALARM INFOKAN!</h2>
+    <p style="font-size: 1.1rem; color: var(--rose-400); margin: 6px 0 24px 0;" id="activeAlarmTime">00:00</p>
+    <button id="btnDismissAlarm" class="btn-primary btn-rose" style="width: 220px; font-size: 1.1rem;">
+      Matikan Alarm
+    </button>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="js/db.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/activation.js"></script>
+  <script src="js/app.js"></script>
+  
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('SW registration note:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
