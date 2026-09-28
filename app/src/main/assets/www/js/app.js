@@ -1,21 +1,20 @@
 /**
  * Infokan (uang dan waktu) - Main Application Controller
- * Ultra-Responsive, Offline-First PWA Controller
+ * Ultra-Responsive, 100% Offline-First Controller with Hard Activation Gate
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // ===================== STATE & REFERENCES =====================
+  // Global State
   const state = {
     currentTab: 'dashboard',
     transactionSubTab: 'expense',
     selectedExpenseCategory: 'Makan & Minum',
     selectedExpenseSubCategory: 'Makan Harian',
     selectedIncomeCategory: 'Kiriman Orang Tua / Keluarga',
-    transferMode: 'tarik', // 'tarik' or 'setor'
+    transferMode: 'tarik',
     selectedTransferBank: 'BCA',
     dayFilter: 'all',
-    taskPriorityFilter: 'all',
-    activeAlarmId: null
+    taskPriorityFilter: 'all'
   };
 
   const subCategoryMap = {
@@ -35,7 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Helper: Parse Rupiah Raw Input
   function parseRupiahInput(value) {
-    return parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
+    if (!value) return 0;
+    return parseInt(String(value).replace(/[^0-9]/g, ''), 10) || 0;
   }
 
   // Toast System
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    toast.innerHTML = `<span style="font-size: 1.1rem;">${icon}</span> <span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
       toast.style.transition = 'all 0.3s ease';
@@ -54,26 +54,142 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 2800);
   }
 
-  // Set Default Date & Time to Now
-  function resetDateTimePickers() {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const timeStr = `${hours}:${minutes}`;
+  // ===================== 1. ACTIVATION GATE SYSTEM =====================
+  const activationGateScreen = document.getElementById('activationGateScreen');
+  const mainAppContainer = document.getElementById('mainAppContainer');
+  const gateInstallId = document.getElementById('gateInstallId');
+  const btnGateCopyId = document.getElementById('btnGateCopyId');
+  const btnGateWhatsApp = document.getElementById('btnGateWhatsApp');
+  const formGateActivation = document.getElementById('formGateActivation');
+  const gateInputCode = document.getElementById('gateInputCode');
+  const gateLogoBtn = document.getElementById('gateLogoBtn');
 
-    ['expenseDateInput', 'incomeDateInput', 'transferDateInput', 'taskDeadlineDateInput'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el && !el.value) el.value = todayStr;
-    });
+  // Secret Dev Modal Elements
+  const modalDevMode = document.getElementById('modalDevMode');
+  const btnCloseDev = document.getElementById('btnCloseDev');
+  const devPinSection = document.getElementById('devPinSection');
+  const devUnlockedSection = document.getElementById('devUnlockedSection');
+  const devPinInput = document.getElementById('devPinInput');
+  const btnSubmitDevPin = document.getElementById('btnSubmitDevPin');
+  const devGeneratedCode = document.getElementById('devGeneratedCode');
+  const btnDevInstantActivate = document.getElementById('btnDevInstantActivate');
 
-    ['expenseTimeInput', 'incomeTimeInput', 'transferTimeInput', 'taskDeadlineTimeInput'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el && !el.value) el.value = timeStr;
-    });
+  async function checkActivationGate() {
+    const isAct = window.activationEngine.isActivated();
+    if (isAct) {
+      if (activationGateScreen) activationGateScreen.style.display = 'none';
+      if (mainAppContainer) mainAppContainer.style.display = 'flex';
+      refreshDashboard();
+    } else {
+      if (activationGateScreen) activationGateScreen.style.display = 'flex';
+      if (mainAppContainer) mainAppContainer.style.display = 'none';
+      const id = await window.activationEngine.getInstallationId();
+      if (gateInstallId) gateInstallId.value = id;
+    }
   }
 
-  // ===================== NAVIGATION =====================
+  // Copy Installation ID
+  btnGateCopyId?.addEventListener('click', () => {
+    window.soundEngine.playClick();
+    if (gateInstallId) {
+      try {
+        navigator.clipboard?.writeText(gateInstallId.value);
+      } catch (e) {}
+      gateInstallId.select();
+      showToast('Installation ID berhasil disalin!', '📋');
+    }
+  });
+
+  // Open WhatsApp Link
+  btnGateWhatsApp?.addEventListener('click', () => {
+    window.soundEngine.playClick();
+    window.activationEngine.openWhatsAppSupport();
+  });
+
+  // Verify Activation Code Form
+  formGateActivation?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = gateInputCode?.value || '';
+    if (!code.trim()) {
+      showToast('Masukkan kode aktivasi!', '⚠️');
+      return;
+    }
+
+    const res = await window.activationEngine.verifyCode(code);
+    if (res.success) {
+      window.soundEngine.playSuccess();
+      showToast('Aktivasi Berhasil! Selamat datang di Infokan!', '🎉');
+      if (activationGateScreen) activationGateScreen.style.display = 'none';
+      if (mainAppContainer) mainAppContainer.style.display = 'flex';
+      refreshDashboard();
+    } else {
+      window.soundEngine.playWarning();
+      showToast(res.message, '❌');
+    }
+  });
+
+  // Secret Dev Mode 5-Tap Handler (Logo on Gate & Shield on Top Bar)
+  function triggerDevSecret() {
+    window.soundEngine.playWarning();
+    if (devPinInput) devPinInput.value = '';
+    if (devPinSection) devPinSection.style.display = 'flex';
+    if (devUnlockedSection) devUnlockedSection.style.display = 'none';
+    modalDevMode?.classList.add('open');
+  }
+
+  gateLogoBtn?.addEventListener('click', () => {
+    window.soundEngine.playClick();
+    window.activationEngine.handleShieldTap(triggerDevSecret);
+  });
+
+  document.getElementById('shieldStatusBtn')?.addEventListener('click', () => {
+    window.soundEngine.playClick();
+    window.activationEngine.handleShieldTap(triggerDevSecret);
+  });
+
+  document.getElementById('brandLogoBtn')?.addEventListener('click', () => {
+    window.soundEngine.playClick();
+    window.activationEngine.handleShieldTap(triggerDevSecret);
+  });
+
+  btnCloseDev?.addEventListener('click', () => {
+    modalDevMode?.classList.remove('open');
+  });
+
+  // Verify Dev PIN: 2026
+  btnSubmitDevPin?.addEventListener('click', async () => {
+    window.soundEngine.playClick();
+    const pin = (devPinInput?.value || '').trim();
+    if (pin === '2026') {
+      const id = await window.activationEngine.getInstallationId();
+      const code = await window.activationEngine.calculateValidCode(id);
+      if (devGeneratedCode) devGeneratedCode.value = code;
+      if (devPinSection) devPinSection.style.display = 'none';
+      if (devUnlockedSection) devUnlockedSection.style.display = 'flex';
+      window.soundEngine.playSuccess();
+    } else {
+      window.soundEngine.playWarning();
+      showToast('PIN Otorisasi Pengembang Salah!', '⛔');
+      if (devPinInput) devPinInput.value = '';
+    }
+  });
+
+  // Instant Dev Activation
+  btnDevInstantActivate?.addEventListener('click', async () => {
+    window.soundEngine.playClick();
+    const code = devGeneratedCode?.value;
+    if (code) {
+      await window.activationEngine.verifyCode(code);
+      window.soundEngine.playSuccess();
+      showToast('Perangkat Berhasil Diaktifkan Instan!', '🚀');
+      modalDevMode?.classList.remove('open');
+      if (activationGateScreen) activationGateScreen.style.display = 'none';
+      if (mainAppContainer) mainAppContainer.style.display = 'flex';
+      refreshDashboard();
+    }
+  });
+
+  // ===================== 2. NAVIGATION =====================
   const pages = {
     dashboard: document.getElementById('pageDashboard'),
     transactions: document.getElementById('pageTransactions'),
@@ -93,23 +209,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.currentTab = tabName;
     window.soundEngine.playClick();
 
-    // Toggle pages
-    Object.keys(pages).forEach(key => {
-      if (pages[key]) {
-        pages[key].style.display = (key === tabName) ? 'flex' : 'none';
-      }
+    Object.keys(pages).forEach(k => {
+      if (pages[k]) pages[k].style.display = (k === tabName) ? 'flex' : 'none';
     });
 
-    // Toggle bottom nav highlights
-    Object.keys(navItems).forEach(key => {
-      if (navItems[key]) {
-        navItems[key].classList.toggle('active', key === tabName);
-      }
+    Object.keys(navItems).forEach(k => {
+      if (navItems[k]) navItems[k].classList.toggle('active', k === tabName);
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Refresh views
     if (tabName === 'dashboard') refreshDashboard();
     if (tabName === 'transactions') refreshTransactionsHistory();
     if (tabName === 'budget') refreshBudgetView();
@@ -117,25 +226,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (tabName === 'tasks') refreshTasksView();
   }
 
-  // Bind Nav Items
-  Object.keys(navItems).forEach(key => {
-    if (navItems[key]) {
-      navItems[key].addEventListener('click', () => switchTab(key));
+  Object.keys(navItems).forEach(k => {
+    if (navItems[k]) {
+      navItems[k].addEventListener('click', () => switchTab(k));
     }
   });
 
-  // FAB button in center: Go to Transactions Tab
-  const navFabAdd = document.getElementById('navFabAdd');
-  if (navFabAdd) {
-    navFabAdd.addEventListener('click', () => switchTab('transactions'));
-  }
-
-  // Direct buttons from dashboard widgets
+  document.getElementById('navFabAdd')?.addEventListener('click', () => switchTab('transactions'));
   document.getElementById('btnGoBudget')?.addEventListener('click', () => switchTab('budget'));
   document.getElementById('btnGoSchedule')?.addEventListener('click', () => switchTab('schedule'));
   document.getElementById('btnGoTasks')?.addEventListener('click', () => switchTab('tasks'));
 
-  // ===================== SEGMENTED CONTROLLER (TRANSAKSI) =====================
+  // ===================== 3. TRANSAKSI 3-TAB SEGMENTED CONTROLLER =====================
   const tabExpenseBtn = document.getElementById('tabExpenseBtn');
   const tabIncomeBtn = document.getElementById('tabIncomeBtn');
   const tabTransferBtn = document.getElementById('tabTransferBtn');
@@ -148,7 +250,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.transactionSubTab = subTab;
     window.soundEngine.playClick();
 
-    // Reset button classes
     tabExpenseBtn?.classList.remove('active-expense');
     tabIncomeBtn?.classList.remove('active-income');
     tabTransferBtn?.classList.remove('active-transfer');
@@ -173,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   tabIncomeBtn?.addEventListener('click', () => switchTransactionSubTab('income'));
   tabTransferBtn?.addEventListener('click', () => switchTransactionSubTab('transfer'));
 
-  // Sub-Categories Populator
+  // Populate sub-categories dynamically
   function populateExpenseSubCategories(cat) {
     const container = document.getElementById('expenseSubCategoryChips');
     if (!container) return;
@@ -196,7 +297,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Bind Expense Category Chips
+  // Expense Category Chips
   const expenseCatChips = document.querySelectorAll('#expenseCategoryChips .chip-btn');
   expenseCatChips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -209,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   populateExpenseSubCategories('Makan & Minum');
 
-  // Bind Income Category Chips
+  // Income Category Chips
   const incomeCatChips = document.querySelectorAll('#incomeCategoryChips .chip-btn');
   incomeCatChips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -220,7 +321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Transfer Mode Toggle (Tarik vs Setor)
+  // Transfer Mode (Tarik vs Setor)
   const btnModeTarik = document.getElementById('btnModeTarik');
   const btnModeSetor = document.getElementById('btnModeSetor');
   const transferAmountLabel = document.getElementById('transferAmountLabel');
@@ -253,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Rupiah Currency Formatter for Inputs
+  // Rupiah Formatter on Inputs
   function setupRupiahInput(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -268,7 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupRupiahInput('transferAmountInput');
   setupRupiahInput('budgetLimitInput');
 
-  // Quick Amount Buttons (Expense)
+  // Quick Amount Buttons
   document.querySelectorAll('[data-add]').forEach(btn => {
     btn.addEventListener('click', () => {
       window.soundEngine.playClick();
@@ -285,7 +386,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (input) input.value = '';
   });
 
-  // Quick Amount Buttons (Income)
   document.querySelectorAll('[data-add-inc]').forEach(btn => {
     btn.addEventListener('click', () => {
       window.soundEngine.playClick();
@@ -302,22 +402,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (input) input.value = '';
   });
 
-  // Character Counter for Notes
-  const expenseNoteInput = document.getElementById('expenseNoteInput');
-  const expenseCharCount = document.getElementById('expenseCharCount');
-  expenseNoteInput?.addEventListener('input', (e) => {
-    if (expenseCharCount) expenseCharCount.textContent = `${e.target.value.length}/150`;
+  // Character Counters
+  document.getElementById('expenseNoteInput')?.addEventListener('input', (e) => {
+    const counter = document.getElementById('expenseCharCount');
+    if (counter) counter.textContent = `${e.target.value.length}/150`;
   });
 
-  const incomeNoteInput = document.getElementById('incomeNoteInput');
-  const incomeCharCount = document.getElementById('incomeCharCount');
-  incomeNoteInput?.addEventListener('input', (e) => {
-    if (incomeCharCount) incomeCharCount.textContent = `${e.target.value.length}/150`;
+  document.getElementById('incomeNoteInput')?.addEventListener('input', (e) => {
+    const counter = document.getElementById('incomeCharCount');
+    if (counter) counter.textContent = `${e.target.value.length}/150`;
   });
+
+  // Default Date & Time Setup
+  function resetDateTimePickers() {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
+
+    ['expenseDateInput', 'incomeDateInput', 'transferDateInput', 'taskDeadlineDateInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = todayStr;
+    });
+
+    ['expenseTimeInput', 'incomeTimeInput', 'transferTimeInput', 'taskDeadlineTimeInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = timeStr;
+    });
+  }
+  resetDateTimePickers();
 
   // ===================== FORM SUBMISSIONS =====================
 
-  // Form: Simpan Pengeluaran
+  // Expense Submission
   formExpense?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const amount = parseRupiahInput(document.getElementById('expenseAmountInput').value);
@@ -342,16 +460,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     window.soundEngine.playSuccess();
-    showToast(`Pengeluaran Rp ${formatRupiah(amount)} berhasil disimpan!`, '💸');
+    showToast(`Pengeluaran Rp ${formatRupiah(amount)} disimpan!`, '💸');
     document.getElementById('expenseAmountInput').value = '';
     document.getElementById('expenseNoteInput').value = '';
-    if (expenseCharCount) expenseCharCount.textContent = '0/150';
+    const counter = document.getElementById('expenseCharCount');
+    if (counter) counter.textContent = '0/150';
 
     refreshDashboard();
     refreshTransactionsHistory();
   });
 
-  // Form: Simpan Pemasukan
+  // Income Submission
   formIncome?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const amount = parseRupiahInput(document.getElementById('incomeAmountInput').value);
@@ -375,16 +494,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     window.soundEngine.playSuccess();
-    showToast(`Pemasukan Rp ${formatRupiah(amount)} berhasil disimpan!`, '💵');
+    showToast(`Pemasukan Rp ${formatRupiah(amount)} disimpan!`, '💵');
     document.getElementById('incomeAmountInput').value = '';
     document.getElementById('incomeNoteInput').value = '';
-    if (incomeCharCount) incomeCharCount.textContent = '0/150';
+    const counter = document.getElementById('incomeCharCount');
+    if (counter) counter.textContent = '0/150';
 
     refreshDashboard();
     refreshTransactionsHistory();
   });
 
-  // Form: Simpan Tarik / Setor Tunai
+  // Transfer Submission
   formTransfer?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const amount = parseRupiahInput(document.getElementById('transferAmountInput').value);
@@ -419,8 +539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshTransactionsHistory();
   });
 
-  // ===================== DASHBOARD & HISTORY REFRESH =====================
-
+  // ===================== REFRESH DASHBOARD & HISTORY =====================
   async function refreshDashboard() {
     const summary = await window.infokanDB.getFinancialSummary();
     const netEl = document.getElementById('dashNetWorth');
@@ -431,11 +550,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cashEl) cashEl.textContent = `Rp ${formatRupiah(summary.cashBalance)}`;
     if (bankEl) bankEl.textContent = `Rp ${formatRupiah(summary.bankBalance)}`;
 
-    // Mini-Widget: Budget Summary
     renderDashboardBudgetWidget();
-    // Mini-Widget: Schedule Today
     renderDashboardScheduleWidget();
-    // Mini-Widget: Urgent Tasks
     renderDashboardTaskWidget();
   }
 
@@ -537,7 +653,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Check if category already has budget
     const allBudgets = await window.infokanDB.getAll('budgets');
     const existing = allBudgets.find(b => b.category === category && (!id || b.id !== Number(id)));
 
@@ -563,7 +678,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const budgets = await window.infokanDB.getAll('budgets');
     const transactions = await window.infokanDB.getAll('transactions');
 
-    // Filter expenses in current month
     const now = new Date();
     const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const monthlyExpenses = transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentYearMonth));
@@ -579,7 +693,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       totalLimit += b.limitAmount;
       totalSpent += spent;
 
-      // Safe percentage calculation (divide-by-zero protected)
       const percent = b.limitAmount > 0 ? (spent / b.limitAmount) * 100 : 0;
       const clampedPercent = Math.min(Math.max(percent, 0), 100);
 
@@ -612,20 +725,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const countEl = document.getElementById('budgetListCount');
     const alertBannerList = document.getElementById('budgetAlertBannerList');
 
-    // Update Overall Stats
     document.getElementById('budgetUsedText').textContent = `Rp ${formatRupiah(stats.totalSpent)}`;
     document.getElementById('budgetTotalLimitText').textContent = `dari batas Rp ${formatRupiah(stats.totalLimit)}`;
     document.getElementById('budgetPercentageText').textContent = `${Math.round(stats.overallPercent)}%`;
 
-    // Circular Progress Ring calculation
     const circle = document.getElementById('budgetCircleProgress');
     if (circle) {
       const radius = 34;
-      const circumference = 2 * Math.PI * radius; // 213.6
+      const circumference = 2 * Math.PI * radius;
       const offset = circumference - (stats.overallClampedPercent / 100) * circumference;
       circle.style.strokeDashoffset = offset;
 
-      // Color coding (<70% green, 70-90% amber, >100% red)
       if (stats.overallPercent > 100) {
         circle.style.stroke = 'var(--rose-500)';
       } else if (stats.overallPercent >= 70) {
@@ -635,7 +745,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Warnings Banner
     if (alertBannerList) {
       alertBannerList.innerHTML = '';
       const overBudgetItems = stats.categoryStats.filter(c => c.isOver);
@@ -654,7 +763,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Category List
     if (countEl) countEl.textContent = `${stats.categoryStats.length} Kategori`;
 
     if (stats.categoryStats.length === 0) {
@@ -722,7 +830,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Dashboard Budget Mini-Widget
   async function renderDashboardBudgetWidget() {
     const container = document.getElementById('dashBudgetWidgetContent');
     const alertsContainer = document.getElementById('dashBudgetAlerts');
@@ -730,7 +837,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const stats = await calculateBudgetProgress();
 
-    // Render alert on dashboard top if over budget
     if (alertsContainer) {
       alertsContainer.innerHTML = '';
       const over = stats.categoryStats.filter(c => c.isOver);
@@ -765,7 +871,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
-  // ===================== SCHEDULE & ALARMS =====================
+  // ===================== 4. SCHEDULE & ALARMS =====================
   const modalSchedule = document.getElementById('modalSchedule');
   const btnOpenAddSchedule = document.getElementById('btnOpenAddSchedule');
   const btnCloseScheduleModal = document.getElementById('btnCloseScheduleModal');
@@ -836,7 +942,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshScheduleView();
   });
 
-  // Day Filter for Schedules
   const dayFilterChips = document.querySelectorAll('#dayFilterChips .chip-btn');
   dayFilterChips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -848,7 +953,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Real-time Clock & Alarm Polling Loop
   function getIndonesianDayName(dayIndex) {
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     return days[dayIndex];
@@ -868,7 +972,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         clockEl.textContent = `${dayName}, ${timeStr}:${seconds} WIB`;
       }
 
-      // Check Alarms (Trigger only at :00 second)
       if (now.getSeconds() === 0 && !window.soundEngine.isAlarmRunning) {
         const alarms = await window.infokanDB.getAll('alarms');
         const activeAlarm = alarms.find(a => a.enabled && a.time === timeStr);
@@ -886,7 +989,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const timeEl = document.getElementById('activeAlarmTime');
     if (!overlay) return;
 
-    state.activeAlarmId = alarm.id;
     if (titleEl) titleEl.textContent = alarm.title.toUpperCase();
     if (timeEl) timeEl.textContent = alarm.time;
 
@@ -910,7 +1012,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const schedules = await window.infokanDB.getAll('schedules');
     const alarms = await window.infokanDB.getAll('alarms');
 
-    // 1. Render Alarms
     if (alarmCountBadge) alarmCountBadge.textContent = `${alarms.length} Alarm`;
     if (alarmListEl) {
       if (alarms.length === 0) {
@@ -963,7 +1064,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // 2. Render Timeline Schedules (With real-time line-through & opacity)
     const now = new Date();
     const currentDayName = getIndonesianDayName(now.getDay());
     const currentHourMin = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -972,7 +1072,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (state.dayFilter !== 'all') {
       filtered = schedules.filter(s => s.dayOfWeek === state.dayFilter);
     }
-    // Sort by startTime
     filtered.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     if (filtered.length === 0) {
@@ -1023,7 +1122,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Dashboard Schedule Mini-Widget
   async function renderDashboardScheduleWidget() {
     const container = document.getElementById('dashScheduleWidgetContent');
     if (!container) return;
@@ -1065,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // ===================== TASK MANAGEMENT =====================
+  // ===================== 5. TASK MANAGEMENT =====================
   const modalTask = document.getElementById('modalTask');
   const btnOpenAddTask = document.getElementById('btnOpenAddTask');
   const btnCloseTaskModal = document.getElementById('btnCloseTaskModal');
@@ -1103,7 +1201,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshDashboard();
   });
 
-  // Task Priority Filter Chips
   const taskPrioChips = document.querySelectorAll('#taskPriorityFilterChips .chip-btn');
   taskPrioChips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -1128,7 +1225,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (state.taskPriorityFilter !== 'all') {
       filtered = tasks.filter(t => t.priority === state.taskPriorityFilter);
     }
-    // Sort: uncompleted first, then nearest deadline
     filtered.sort((a, b) => {
       if (a.completed !== b.completed) return a.completed - b.completed;
       return (a.deadline || '').localeCompare(b.deadline || '');
@@ -1198,7 +1294,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Dashboard Task Mini-Widget
   async function renderDashboardTaskWidget() {
     const container = document.getElementById('dashTaskWidgetContent');
     if (!container) return;
@@ -1235,155 +1330,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // ===================== OFFLINE ACTIVATION & SECRET DEV MODE =====================
-  const shieldStatusBtn = document.getElementById('shieldStatusBtn');
-  const shieldLabel = document.getElementById('shieldLabel');
-  const modalActivation = document.getElementById('modalActivation');
-  const btnCloseActivation = document.getElementById('btnCloseActivation');
-  const actInstallId = document.getElementById('actInstallId');
-  const btnCopyInstallId = document.getElementById('btnCopyInstallId');
-  const actInputCode = document.getElementById('actInputCode');
-  const btnVerifyActivation = document.getElementById('btnVerifyActivation');
-  const btnWhatsAppSupport = document.getElementById('btnWhatsAppSupport');
-
-  // Secret Dev Modal Elements
-  const modalDevMode = document.getElementById('modalDevMode');
-  const btnCloseDev = document.getElementById('btnCloseDev');
-  const devPinSection = document.getElementById('devPinSection');
-  const devUnlockedSection = document.getElementById('devUnlockedSection');
-  const devPinInput = document.getElementById('devPinInput');
-  const btnSubmitDevPin = document.getElementById('btnSubmitDevPin');
-  const devGeneratedCode = document.getElementById('devGeneratedCode');
-  const btnDevInstantActivate = document.getElementById('btnDevInstantActivate');
-
-  async function checkAppActivation() {
-    const isAct = await window.activationEngine.checkStatus();
-    if (shieldStatusBtn && shieldLabel) {
-      if (isAct) {
-        shieldStatusBtn.classList.remove('unactivated');
-        shieldLabel.textContent = 'Aktif (Pro)';
-      } else {
-        shieldStatusBtn.classList.add('unactivated');
-        shieldLabel.textContent = 'Aktivasi';
-      }
-    }
-  }
-
-  shieldStatusBtn?.addEventListener('click', async () => {
-    window.soundEngine.playClick();
-
-    // Shield tap counter for secret dev mode (5 taps in < 1.5s)
-    window.activationEngine.handleShieldTap(async () => {
-      // 5 taps unlocked!
-      window.soundEngine.playWarning();
-      if (devPinInput) devPinInput.value = '';
-      if (devPinSection) devPinSection.style.display = 'flex';
-      if (devUnlockedSection) devUnlockedSection.style.display = 'none';
-      modalDevMode?.classList.add('open');
-    });
-
-    // Also open regular activation modal if not currently opening dev mode
-    const id = await window.activationEngine.getInstallationId();
-    if (actInstallId) actInstallId.value = id;
-    modalActivation?.classList.add('open');
-  });
-
-  btnCloseActivation?.addEventListener('click', () => {
-    modalActivation?.classList.remove('open');
-  });
-
-  btnCopyInstallId?.addEventListener('click', () => {
-    window.soundEngine.playClick();
-    if (actInstallId) {
-      navigator.clipboard?.writeText(actInstallId.value).then(() => {
-        showToast('Installation ID disalin ke clipboard!', '📋');
-      }).catch(() => {
-        actInstallId.select();
-        showToast('Teks terseleksi, silakan salin!', '📋');
-      });
-    }
-  });
-
-  btnWhatsAppSupport?.addEventListener('click', () => {
-    window.soundEngine.playClick();
-    window.activationEngine.openWhatsAppSupport();
-  });
-
-  btnVerifyActivation?.addEventListener('click', async () => {
-    window.soundEngine.playClick();
-    const code = actInputCode?.value || '';
-    if (!code) {
-      showToast('Masukkan kode aktivasi terlebih dahulu', '⚠️');
-      return;
-    }
-
-    const result = await window.activationEngine.verifyCode(code);
-    if (result.success) {
-      window.soundEngine.playSuccess();
-      showToast(result.message, '🎉');
-      modalActivation?.classList.remove('open');
-      checkAppActivation();
-    } else {
-      window.soundEngine.playWarning();
-      showToast(result.message, '❌');
-    }
-  });
-
-  // Secret Dev Mode: PIN Verification (PIN: 2026 - not written on UI)
-  btnCloseDev?.addEventListener('click', () => {
-    modalDevMode?.classList.remove('open');
-  });
-
-  btnSubmitDevPin?.addEventListener('click', async () => {
-    window.soundEngine.playClick();
-    const enteredPin = (devPinInput?.value || '').trim();
-    if (enteredPin === '2026') {
-      const id = await window.activationEngine.getInstallationId();
-      const code = await window.activationEngine.calculateValidCode(id);
-
-      if (devGeneratedCode) devGeneratedCode.value = code;
-      if (devPinSection) devPinSection.style.display = 'none';
-      if (devUnlockedSection) devUnlockedSection.style.display = 'flex';
-      window.soundEngine.playSuccess();
-    } else {
-      window.soundEngine.playWarning();
-      showToast('PIN Otorisasi Salah!', '⛔');
-      if (devPinInput) devPinInput.value = '';
-    }
-  });
-
-  btnDevInstantActivate?.addEventListener('click', async () => {
-    window.soundEngine.playClick();
-    const code = devGeneratedCode?.value;
-    if (code) {
-      await window.activationEngine.verifyCode(code);
-      window.soundEngine.playSuccess();
-      showToast('Perangkat Berhasil Diaktifkan Instan!', '🚀');
-      modalDevMode?.classList.remove('open');
-      modalActivation?.classList.remove('open');
-      checkAppActivation();
-    }
-  });
-
-  // ===================== SHORTCUTS & DEEP LINKING =====================
-  function handleUrlShortcuts() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const action = urlParams.get('action') || (window.location.hash ? window.location.hash.replace('#', '') : null);
-
-    if (action === 'new-expense') {
-      switchTab('transactions');
-      switchTransactionSubTab('expense');
-    } else if (action === 'budget') {
-      switchTab('budget');
-    } else if (action === 'schedule') {
-      switchTab('schedule');
-    }
-  }
-
-  // ===================== INITIALIZATION =====================
+  // ===================== INITIAL BOOTSTRAP =====================
   await window.infokanDB.init();
-  resetDateTimePickers();
-  await checkAppActivation();
-  await refreshDashboard();
-  handleUrlShortcuts();
+  await checkActivationGate();
 });

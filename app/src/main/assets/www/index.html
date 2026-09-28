@@ -19,8 +19,66 @@
 </head>
 <body>
 
-  <!-- App Wrapper -->
-  <div class="app-container">
+  <!-- ==================== 1. FULLSCREEN INITIAL ACTIVATION GATE ==================== -->
+  <!-- App CANNOT be used until activated 1 time -->
+  <div id="activationGateScreen" class="activation-gate-screen" style="display: flex;">
+    <div class="activation-gate-card">
+      <!-- 5-Tap Secret Developer Logo -->
+      <img src="icons/icon-192x192.png" alt="Infokan Logo" id="gateLogoBtn" class="activation-gate-logo" title="Infokan">
+      
+      <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #ffffff 40%, var(--emerald-400)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          Infokan
+        </h1>
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">
+          uang dan waktu • 100% offline-first
+        </p>
+      </div>
+
+      <!-- Lock Notice -->
+      <div style="padding: 10px 14px; border-radius: 14px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--amber-400); font-size: 0.8rem; font-weight: 600;">
+        🔒 Aplikasi Terkunci (Perlu Aktivasi 1 Kali)
+      </div>
+
+      <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45;">
+        Aplikasi ini bebas server & 100% offline. Untuk mulai menggunakan, aktifkan perangkat Anda dengan kode aktivasi resmi.
+      </p>
+
+      <!-- Installation ID Card -->
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label" style="font-size: 0.75rem;">Installation ID Perangkat Anda</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="gateInstallId" class="input-field" readonly style="font-family: monospace; font-weight: 800; color: var(--cyan-400); background: #090d16; font-size: 0.95rem; text-align: center;">
+          <button type="button" id="btnGateCopyId" class="chip-btn" style="padding: 0 14px; border-radius: 12px; font-weight: 700;">Salin</button>
+        </div>
+      </div>
+
+      <!-- WhatsApp Request Button -->
+      <button type="button" class="btn-primary" id="btnGateWhatsApp" style="background: #25D366; color: #090d16; font-weight: 700;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/></svg>
+        Minta Kode Aktivasi (WhatsApp)
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+        <span style="font-size: 0.72rem; color: var(--text-dim);">masukkan kode di bawah</span>
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+      </div>
+
+      <!-- Activation Code Form -->
+      <form id="formGateActivation" class="form-group" style="text-align: left; gap: 10px;">
+        <input type="text" id="gateInputCode" class="input-field" placeholder="ACT-XXXX-XXXX-XXXX" style="font-family: monospace; text-transform: uppercase; font-weight: 700; text-align: center; letter-spacing: 0.05em;" required autocomplete="off">
+        <button type="submit" class="btn-primary btn-emerald">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Aktifkan Aplikasi Sekarang
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ==================== 2. MAIN APPLICATION (UNLOCKED) ==================== -->
+  <div id="mainAppContainer" class="app-container" style="display: none;">
     
     <!-- Top Bar -->
     <header class="top-bar">
@@ -35,11 +93,11 @@
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="shieldStatusBtn" class="shield-btn unactivated" aria-label="Status Aktivasi">
+        <button id="shieldStatusBtn" class="shield-btn" aria-label="Status Lisensi">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          <span id="shieldLabel">Aktivasi</span>
+          <span id="shieldLabel">Aktif (Pro)</span>
         </button>
       </div>
     </header>
@@ -53,7 +111,7 @@
         <div class="card hero-balance-card">
           <div class="card-header" style="margin-bottom: 0;">
             <span class="card-subtitle" style="color: var(--cyan-400); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Total Saldo Bersih</span>
-            <span id="offlineIndicator" style="font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: var(--emerald-400); font-weight: 600;">100% Offline</span>
+            <span style="font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: var(--emerald-400); font-weight: 600;">100% Offline</span>
           </div>
           <div class="hero-amount">
             <span class="currency">Rp</span>
@@ -78,7 +136,7 @@
           </div>
         </div>
 
-        <!-- Warning Alert Banner for Budgets (Dynamically injected) -->
+        <!-- Warning Alert Banner for Budgets -->
         <div id="dashBudgetAlerts"></div>
 
         <!-- Mini-Widget: Ringkasan Anggaran Bulan Ini -->
@@ -90,9 +148,7 @@
             </h2>
             <button class="chip-btn" id="btnGoBudget" style="padding: 4px 8px; font-size: 0.7rem;">Kelola</button>
           </div>
-          <div id="dashBudgetWidgetContent">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="dashBudgetWidgetContent"></div>
         </div>
 
         <!-- Mini-Widget: Jadwal Terdekat Hari Ini -->
@@ -104,9 +160,7 @@
             </h2>
             <button class="chip-btn" id="btnGoSchedule" style="padding: 4px 8px; font-size: 0.7rem;">Lihat Semua</button>
           </div>
-          <div id="dashScheduleWidgetContent">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="dashScheduleWidgetContent"></div>
         </div>
 
         <!-- Mini-Widget: Deadline Tugas Mendesak -->
@@ -118,9 +172,7 @@
             </h2>
             <button class="chip-btn" id="btnGoTasks" style="padding: 4px 8px; font-size: 0.7rem;">Semua Tugas</button>
           </div>
-          <div id="dashTaskWidgetContent">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="dashTaskWidgetContent"></div>
         </div>
       </section>
 
@@ -148,14 +200,12 @@
           
           <!-- TAB 1: PENGELUARAN FORM -->
           <form id="formExpense" class="form-group" style="gap: 14px;">
-            <!-- Hero Typography Amount Input -->
             <div class="form-group">
               <label class="form-label">Nominal Pengeluaran</label>
               <div class="hero-input-wrapper focus-rose">
                 <span class="hero-currency-prefix">Rp</span>
                 <input type="text" id="expenseAmountInput" class="hero-input-field" placeholder="0" inputmode="numeric" autocomplete="off" required>
               </div>
-              <!-- Quick Amount Pills -->
               <div class="quick-amount-row">
                 <button type="button" class="quick-amount-btn" data-add="10000">+10.000</button>
                 <button type="button" class="quick-amount-btn" data-add="20000">+20.000</button>
@@ -165,7 +215,6 @@
               </div>
             </div>
 
-            <!-- Date & Time Picker (Modern + Backdate) -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
               <div class="form-group">
                 <label class="form-label">Tanggal</label>
@@ -177,7 +226,6 @@
               </div>
             </div>
 
-            <!-- Category (Pill Chips) -->
             <div class="form-group">
               <label class="form-label">Kategori Utama</label>
               <div class="chips-container" id="expenseCategoryChips">
@@ -190,15 +238,11 @@
               </div>
             </div>
 
-            <!-- Sub Category (Pill Chips) -->
             <div class="form-group">
               <label class="form-label">Sub-Kategori</label>
-              <div class="chips-container" id="expenseSubCategoryChips">
-                <!-- Dynamically populated based on category -->
-              </div>
+              <div class="chips-container" id="expenseSubCategoryChips"></div>
             </div>
 
-            <!-- Catatan (Optional with limit) -->
             <div class="form-group">
               <div class="form-label">
                 <span>Catatan (Opsional)</span>
@@ -241,7 +285,6 @@
               </div>
             </div>
 
-            <!-- Categories Pemasukan Anak Kost -->
             <div class="form-group">
               <label class="form-label">Sumber Pemasukan</label>
               <div class="chips-container" id="incomeCategoryChips">
@@ -249,7 +292,7 @@
                 <button type="button" class="chip-btn" data-inc="Gaji / Kerja Part-Time / Magang">💼 Gaji / Kerja Part-Time</button>
                 <button type="button" class="chip-btn" data-inc="Beasiswa Kuliah">🎓 Beasiswa Kuliah</button>
                 <button type="button" class="chip-btn" data-inc="Hadiah / Angpao / THR">🎁 Hadiah / Angpao / THR</button>
-                <button type="button" class="chip-btn" data-inc="Jual Barang Bekas / Preloved">🛍️ Jual Barang Bekas / Preloved</button>
+                <button type="button" class="chip-btn" data-inc="Jual Barang Bekas / Preloved">🛍️ Jual Barang Bekas</button>
                 <button type="button" class="chip-btn" data-inc="Reimburse / Pengembalian Utang">📈 Reimburse / Utang Teman</button>
                 <button type="button" class="chip-btn" data-inc="Lainnya">📦 Lainnya</button>
               </div>
@@ -271,11 +314,10 @@
 
           <!-- TAB 3: TARIK / SETOR TUNAI FORM -->
           <form id="formTransfer" class="form-group" style="gap: 14px; display: none;">
-            <!-- Mode Switch: Tarik vs Setor -->
             <div class="transfer-mode-switch">
               <button type="button" class="transfer-pill active" id="btnModeTarik">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
-                Tarik Tunai (ATM ➔ Cash)
+                Tarik Tunai (Bank ➔ Cash)
               </button>
               <button type="button" class="transfer-pill" id="btnModeSetor">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -302,7 +344,6 @@
               </div>
             </div>
 
-            <!-- Bank / E-Wallet Chips -->
             <div class="form-group">
               <label class="form-label">Pilihan Bank / E-Wallet</label>
               <div class="chips-container" id="transferBankChips">
@@ -319,7 +360,7 @@
 
             <div class="form-group">
               <label class="form-label">Catatan Mutasi</label>
-              <input type="text" id="transferNoteInput" class="input-field" placeholder="Contoh: Tarik di ATM Indomaret dekat kost">
+              <input type="text" id="transferNoteInput" class="input-field" placeholder="Contoh: Tarik tunai di ATM dekat kampus">
             </div>
 
             <button type="submit" class="btn-primary btn-cyan" id="btnSubmitTransfer">
@@ -330,22 +371,19 @@
 
         </div>
 
-        <!-- Riwayat Transaksi Terbaru -->
+        <!-- Riwayat Transaksi -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Riwayat Transaksi</h2>
             <span class="card-subtitle" id="transHistoryCount">0 Transaksi</span>
           </div>
-          <div id="transHistoryList" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="transHistoryList" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
       </section>
 
       <!-- 3. TAB ANGGARAN (BUDGETING & ANALITIK) -->
       <section id="pageBudget" class="page-view" style="display: none;">
-        <!-- Header & Action -->
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
             <h2 style="font-size: 1.3rem; font-weight: 800;">Anggaran Kost</h2>
@@ -357,10 +395,8 @@
           </button>
         </div>
 
-        <!-- Budget Warnings Banner if any -->
         <div id="budgetAlertBannerList"></div>
 
-        <!-- Overall Budget Health Card with Circular Progress -->
         <div class="card" id="budgetOverallCard">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
             <div>
@@ -369,7 +405,6 @@
               <div style="font-size: 0.8rem; color: var(--text-muted);" id="budgetTotalLimitText">dari batas Rp 0</div>
             </div>
             
-            <!-- Circular Progress Ring (Clamped) -->
             <div style="position: relative; width: 84px; height: 84px; flex-shrink: 0;">
               <svg class="circle-progress-svg" width="84" height="84" viewBox="0 0 84 84">
                 <circle class="circle-progress-bg" cx="42" cy="42" r="34" stroke-width="8" fill="none"/>
@@ -380,15 +415,12 @@
           </div>
         </div>
 
-        <!-- Category Budgets List (CRUD) -->
         <div class="card">
           <div class="card-header">
             <h3 class="card-title">Batas Anggaran Per Kategori</h3>
             <span class="card-subtitle" id="budgetListCount">0 Kategori</span>
           </div>
-          <div id="budgetCategoryList" style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="budgetCategoryList" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
       </section>
 
@@ -411,7 +443,6 @@
           </div>
         </div>
 
-        <!-- Day Selector Filter (Senin - Minggu) -->
         <div class="chips-container" id="dayFilterChips" style="overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px;">
           <button type="button" class="chip-btn selected-cyan" data-day="all">Semua</button>
           <button type="button" class="chip-btn" data-day="Senin">Senin</button>
@@ -423,7 +454,6 @@
           <button type="button" class="chip-btn" data-day="Minggu">Minggu</button>
         </div>
 
-        <!-- Alarm Cards -->
         <div class="card" id="activeAlarmsSection">
           <div class="card-header">
             <h3 class="card-title">
@@ -432,12 +462,9 @@
             </h3>
             <span class="card-subtitle" id="alarmCountBadge">0 Alarm</span>
           </div>
-          <div id="alarmItemsList" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Dynamically populated -->
-          </div>
+          <div id="alarmItemsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
-        <!-- Real-Time Schedule Timeline -->
         <div class="card">
           <div class="card-header">
             <h3 class="card-title">
@@ -446,9 +473,7 @@
             </h3>
             <span class="card-subtitle" id="scheduleFilterLabel">Hari ini</span>
           </div>
-          <div id="scheduleTimelineList" style="display: flex; flex-direction: column;">
-            <!-- Dynamically populated with real-time opacity/line-through for past items -->
-          </div>
+          <div id="scheduleTimelineList" style="display: flex; flex-direction: column;"></div>
         </div>
       </section>
 
@@ -465,7 +490,6 @@
           </button>
         </div>
 
-        <!-- Priority Filters -->
         <div class="chips-container" id="taskPriorityFilterChips">
           <button type="button" class="chip-btn selected-rose" data-prio="all">Semua</button>
           <button type="button" class="chip-btn" data-prio="tinggi">🔥 Prioritas Tinggi</button>
@@ -473,10 +497,7 @@
           <button type="button" class="chip-btn" data-prio="rendah">🌱 Santai</button>
         </div>
 
-        <!-- Tasks List -->
-        <div id="tasksListContainer" style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Rendered dynamically -->
-        </div>
+        <div id="tasksListContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
       </section>
 
     </main>
@@ -511,57 +532,9 @@
 
   </div>
 
-  <!-- ==================== MODALS ==================== -->
+  <!-- ==================== 3. MODALS ==================== -->
 
-  <!-- Modal: Aktivasi Offline -->
-  <div class="modal-overlay" id="modalActivation">
-    <div class="modal-sheet">
-      <div class="sheet-handle"></div>
-      <div class="sheet-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: var(--emerald-400);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <h3 class="sheet-title">Aktivasi Infokan</h3>
-        </div>
-        <button class="sheet-close-btn" id="btnCloseActivation">&times;</button>
-      </div>
-
-      <p style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.45;">
-        Aplikasi ini 100% offline. Salin Installation ID perangkat Anda dan kirimkan ke Admin via WhatsApp untuk mendapatkan kode aktivasi resmi.
-      </p>
-
-      <div class="form-group">
-        <label class="form-label">Installation ID Perangkat Anda</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="actInstallId" class="input-field" readonly style="font-family: monospace; font-weight: 700; color: var(--cyan-400); background: #090d16;">
-          <button type="button" id="btnCopyInstallId" class="chip-btn" style="padding: 0 14px; border-radius: 12px;">Salin</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Masukkan Kode Aktivasi (SHA-256)</label>
-        <input type="text" id="actInputCode" class="input-field" placeholder="ACT-XXXX-XXXX-XXXX" style="font-family: monospace; text-transform: uppercase;">
-      </div>
-
-      <button type="button" class="btn-primary btn-emerald" id="btnVerifyActivation">
-        Verifikasi & Aktifkan
-      </button>
-
-      <div style="display: flex; align-items: center; gap: 10px; margin: 4px 0;">
-        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
-        <span style="font-size: 0.72rem; color: var(--text-dim);">atau bantuan admin</span>
-        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
-      </div>
-
-      <button type="button" class="btn-primary" id="btnWhatsAppSupport" style="background: #25D366; color: #090d16; font-weight: 700;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/></svg>
-        Minta Kode Aktivasi (WhatsApp)
-      </button>
-    </div>
-  </div>
-
-  <!-- Modal: Mode Pengembang Rahasia (5 Taps Shield) -->
+  <!-- Modal: Mode Pengembang Rahasia (5 Taps Gate Logo / Shield) -->
   <div class="modal-overlay" id="modalDevMode">
     <div class="modal-sheet">
       <div class="sheet-handle"></div>
@@ -572,9 +545,9 @@
 
       <div id="devPinSection" class="form-group" style="gap: 12px;">
         <p style="font-size: 0.8rem; color: var(--text-dim);">
-          Akses terbatas. Masukkan PIN otorisasi pengembang untuk membuka diagnostik.
+          Akses terbatas pengembang. Masukkan PIN otorisasi:
         </p>
-        <input type="password" id="devPinInput" class="input-field" placeholder="Masukkan PIN" maxlength="10">
+        <input type="password" id="devPinInput" class="input-field" placeholder="Masukkan PIN" maxlength="10" autocomplete="off">
         <button type="button" class="btn-primary" id="btnSubmitDevPin" style="background: var(--amber-500); color: #090d16;">
           Verifikasi PIN
         </button>
@@ -582,14 +555,14 @@
 
       <div id="devUnlockedSection" class="form-group" style="gap: 12px; display: none;">
         <div class="alert-banner alert-amber">
-          Otorisasi Pengembang Valid! Anda dapat melihat kode aktivasi offline perangkat ini.
+          Otorisasi Valid! Berikut kode aktivasi offline resmi untuk perangkat ini:
         </div>
         <div class="form-group">
-          <label class="form-label">Kode Aktivasi Offline Resmi</label>
-          <input type="text" id="devGeneratedCode" class="input-field" readonly style="font-family: monospace; font-weight: 700; color: var(--emerald-400);">
+          <label class="form-label">Kode Aktivasi Resmi</label>
+          <input type="text" id="devGeneratedCode" class="input-field" readonly style="font-family: monospace; font-weight: 800; color: var(--emerald-400); text-align: center;">
         </div>
         <button type="button" class="btn-primary btn-emerald" id="btnDevInstantActivate">
-          Aktivasi Instan Perangkat Ini
+          ⚡ Aktivasi Instan Perangkat Ini
         </button>
       </div>
     </div>
@@ -600,7 +573,7 @@
     <div class="modal-sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <h3 class="sheet-title" id="budgetModalTitle">Atur Batas Anggaran</h3>
+        <h3 class="sheet-title">Atur Batas Anggaran</h3>
         <button class="sheet-close-btn" id="btnCloseBudget">&times;</button>
       </div>
 
@@ -623,7 +596,7 @@
           <label class="form-label">Batas Maksimal Bulanan</label>
           <div class="hero-input-wrapper">
             <span class="hero-currency-prefix">Rp</span>
-            <input type="text" id="budgetLimitInput" class="hero-input-field" placeholder="0" inputmode="numeric" required>
+            <input type="text" id="budgetLimitInput" class="hero-input-field" placeholder="0" inputmode="numeric" required autocomplete="off">
           </div>
         </div>
 
@@ -675,7 +648,7 @@
 
         <div class="form-group">
           <label class="form-label">Ruangan / Lokasi (Opsional)</label>
-          <input type="text" id="schedLocationInput" class="input-field" placeholder="Contoh: Gedung B Ruang 203 / Lab Komputer">
+          <input type="text" id="schedLocationInput" class="input-field" placeholder="Contoh: Gedung B Ruang 203">
         </div>
 
         <button type="submit" class="btn-primary btn-cyan">
@@ -723,8 +696,8 @@
 
       <form id="formTaskModal" class="form-group" style="gap: 14px;">
         <div class="form-group">
-          <label class="form-label">Judul Tugas / Proyek</label>
-          <input type="text" id="taskTitleInput" class="input-field" placeholder="Contoh: Makalah Pancasila Bab 3" required>
+          <label class="form-label">Judul Tugas</label>
+          <input type="text" id="taskTitleInput" class="input-field" placeholder="Contoh: Tugas Makalah Bab 3" required>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -742,8 +715,8 @@
           <label class="form-label">Tingkat Prioritas</label>
           <select id="taskPrioritySelect" class="select-field" required>
             <option value="tinggi">🔥 Prioritas Tinggi (Mendesak)</option>
-            <option value="sedang" selected>⚡ Sedang (Minggu ini)</option>
-            <option value="rendah">🌱 Santai (Jangka Panjang)</option>
+            <option value="sedang" selected>⚡ Sedang</option>
+            <option value="rendah">🌱 Santai</option>
           </select>
         </div>
 
@@ -774,16 +747,5 @@
   <script src="js/audio.js"></script>
   <script src="js/activation.js"></script>
   <script src="js/app.js"></script>
-  
-  <!-- PWA Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => {
-          console.log('SW registration note:', err);
-        });
-      });
-    }
-  </script>
 </body>
 </html>

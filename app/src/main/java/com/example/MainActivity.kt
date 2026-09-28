@@ -10,7 +10,9 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.ViewGroup
+import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -24,15 +26,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.ui.theme.MyApplicationTheme
 
@@ -41,6 +40,10 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      WebView.setWebContentsDebuggingEnabled(true)
+    }
 
     setContent {
       MyApplicationTheme {
@@ -95,12 +98,19 @@ fun InfokanWebAppContainer(context: Context) {
         )
         setBackgroundColor(Color.parseColor("#090D16"))
 
+        isFocusable = true
+        isFocusableInTouchMode = true
+        isClickable = true
+        requestFocus()
+
         settings.apply {
           javaScriptEnabled = true
           domStorageEnabled = true
           databaseEnabled = true
           allowFileAccess = true
           allowContentAccess = true
+          allowFileAccessFromFileURLs = true
+          allowUniversalAccessFromFileURLs = true
           mediaPlaybackRequiresUserGesture = false
           cacheMode = WebSettings.LOAD_DEFAULT
           setSupportZoom(false)
@@ -132,7 +142,12 @@ fun InfokanWebAppContainer(context: Context) {
           }
         }
 
-        webChromeClient = WebChromeClient()
+        webChromeClient = object : WebChromeClient() {
+          override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+            Log.d("InfokanWeb", "${consoleMessage?.message()} -- line ${consoleMessage?.lineNumber()}")
+            return true
+          }
+        }
 
         loadUrl("file:///android_asset/www/index.html")
         webViewInstance = this
