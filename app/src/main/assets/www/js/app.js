@@ -128,14 +128,73 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Inline Gate Developer Box Elements
+  const gateDevBox = document.getElementById('gateDevBox');
+  const gateDevStep1 = document.getElementById('gateDevStep1');
+  const gateDevStep2 = document.getElementById('gateDevStep2');
+  const gateDevPinInput = document.getElementById('gateDevPinInput');
+  const btnGateDevVerify = document.getElementById('btnGateDevVerify');
+  const gateDevCalculatedCode = document.getElementById('gateDevCalculatedCode');
+  const btnGateDevInstantUnlock = document.getElementById('btnGateDevInstantUnlock');
+  const btnCloseDevBox = document.getElementById('btnCloseDevBox');
+
   // Secret Dev Mode 5-Tap Handler (Logo on Gate & Shield on Top Bar)
   function triggerDevSecret() {
     window.soundEngine.playWarning();
+    // Open Inline Dev Box on Activation Gate
+    if (gateDevBox) {
+      gateDevBox.style.display = 'block';
+      if (gateDevStep1) gateDevStep1.style.display = 'flex';
+      if (gateDevStep2) gateDevStep2.style.display = 'none';
+      if (gateDevPinInput) {
+        gateDevPinInput.value = '';
+        setTimeout(() => gateDevPinInput.focus(), 100);
+      }
+    }
+    // Also prepare modal if on another screen
     if (devPinInput) devPinInput.value = '';
     if (devPinSection) devPinSection.style.display = 'flex';
     if (devUnlockedSection) devUnlockedSection.style.display = 'none';
     modalDevMode?.classList.add('open');
   }
+
+  btnCloseDevBox?.addEventListener('click', () => {
+    if (gateDevBox) gateDevBox.style.display = 'none';
+  });
+
+  // Verify PIN in Inline Gate Dev Box
+  btnGateDevVerify?.addEventListener('click', async () => {
+    window.soundEngine.playClick();
+    const pin = (gateDevPinInput?.value || '').trim();
+    if (pin === '2026') {
+      const id = await window.activationEngine.getInstallationId();
+      const code = await window.activationEngine.calculateValidCode(id);
+      if (gateDevCalculatedCode) gateDevCalculatedCode.value = code;
+      if (gateDevStep1) gateDevStep1.style.display = 'none';
+      if (gateDevStep2) gateDevStep2.style.display = 'flex';
+      window.soundEngine.playSuccess();
+    } else {
+      window.soundEngine.playWarning();
+      showToast('PIN Otorisasi Pengembang Salah!', '⛔');
+      if (gateDevPinInput) gateDevPinInput.value = '';
+    }
+  });
+
+  // Instant Unlock from Inline Gate Dev Box
+  btnGateDevInstantUnlock?.addEventListener('click', async () => {
+    window.soundEngine.playClick();
+    const code = gateDevCalculatedCode?.value;
+    if (code) {
+      await window.activationEngine.verifyCode(code);
+      window.soundEngine.playSuccess();
+      showToast('Perangkat Berhasil Diaktifkan Instan!', '🚀');
+      if (gateDevBox) gateDevBox.style.display = 'none';
+      modalDevMode?.classList.remove('open');
+      if (activationGateScreen) activationGateScreen.style.display = 'none';
+      if (mainAppContainer) mainAppContainer.style.display = 'flex';
+      refreshDashboard();
+    }
+  });
 
   gateLogoBtn?.addEventListener('click', () => {
     window.soundEngine.playClick();
@@ -156,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     modalDevMode?.classList.remove('open');
   });
 
-  // Verify Dev PIN: 2026
+  // Verify Dev PIN in Modal: 2026
   btnSubmitDevPin?.addEventListener('click', async () => {
     window.soundEngine.playClick();
     const pin = (devPinInput?.value || '').trim();
@@ -174,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Instant Dev Activation
+  // Instant Dev Activation in Modal
   btnDevInstantActivate?.addEventListener('click', async () => {
     window.soundEngine.playClick();
     const code = devGeneratedCode?.value;
@@ -183,6 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.soundEngine.playSuccess();
       showToast('Perangkat Berhasil Diaktifkan Instan!', '🚀');
       modalDevMode?.classList.remove('open');
+      if (gateDevBox) gateDevBox.style.display = 'none';
       if (activationGateScreen) activationGateScreen.style.display = 'none';
       if (mainAppContainer) mainAppContainer.style.display = 'flex';
       refreshDashboard();

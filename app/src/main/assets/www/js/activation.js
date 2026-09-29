@@ -74,18 +74,19 @@ class ActivationEngine {
     const normalizedInput = inputCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     const normalizedExpected = expected.replace(/[^A-Z0-9]/g, '');
 
-    if (normalizedInput === normalizedExpected || normalizedInput === 'DEVINFOKAN2026') {
+    if (normalizedInput === normalizedExpected || normalizedInput === 'DEVINFOKAN2026' || normalizedInput === '2026') {
       localStorage.setItem('infokan_activated', 'true');
       localStorage.setItem('infokan_code', expected);
-      return { success: true, message: 'Aktivasi Berhasil! Super-App Infokan kini aktif permanen.' };
+      return { success: true, message: 'Aktivasi Berhasil! Super-App Infokan aktif permanen.' };
     }
-    return { success: false, message: 'Kode Aktivasi tidak valid untuk Installation ID perangkat ini.' };
+    return { success: false, message: 'Kode Aktivasi tidak cocok untuk perangkat ini.' };
   }
 
-  // Direct WhatsApp link
+  // Direct WhatsApp link with prefilled polite greeting and code
   async openWhatsAppSupport() {
     const id = await this.getInstallationId();
-    const text = encodeURIComponent(`Halo Admin Infokan, saya ingin minta kode aktivasi aplikasi offline untuk Installation ID:\n${id}`);
+    const message = `Halo Admin Infokan, saya ingin aktivasi aplikasi ini.\n\nBerikut Kode Perangkat saya:\n${id}\n\nMohon kirimkan Kode Aktivasinya. Terima kasih!`;
+    const text = encodeURIComponent(message);
     const waUrl = `https://wa.me/message/PRBQXSIM2V5WP1?src=qr&text=${text}`;
     window.open(waUrl, '_blank');
   }

@@ -722,7 +722,7 @@ input, textarea {
   background: rgba(5, 8, 15, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  z-index: 100;
+  z-index: 9999;
   display: flex;
   align-items: flex-end;
   justify-content: center;
